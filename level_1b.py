@@ -1,88 +1,78 @@
-import sys
-import json 
+import json
+import itertools
 
-def solve_knapsack(orders, distances, capacity):
+f = open('Input data/level2a.json')
+d = json.load(f)
 
-    n = len(orders)
-    dp = [[0 for _ in range(capacity + 1)] for _ in range(n + 1)]
+neighbour=d['neighbourhoods']
+#let us define two lists to hold order quantity and distances
+ord_quantity=[]
+distance=[]
+for i in neighbour.keys():
+    temp=list(neighbour[i].values())
+    ord_quantity.append(temp[0])
+    distance.append(temp[1])
 
-    for i in range(1, n + 1):
-        for w in range(1, capacity + 1):
-            if orders[i - 1] <= w:
-                dp[i][w] = max(distances[i - 1] + dp[i - 1][w - orders[i - 1]], dp[i - 1][w])
-            else:
-                dp[i][w] = dp[i - 1][w]
+res_dist=d['restaurants']['r0']['neighbourhood_distance']
+max_cap=d['vehicles']['v0']['capacity']
 
-    selected_orders = []
-    w = capacity
-    for i in range(n, 0, -1):
-        if dp[i][w] != dp[i - 1][w]:
-            selected_orders.append(i - 1)
-            w -= orders[i - 1]
+def knapsack(distance, res_dist, ord_quantities, max_cap):
+    node_order = sorted(range(len(res_dist)), key=lambda x: res_dist[x])
+    slots = []
+    current_slot = []
+    current_capacity = 0
+    current_distance = 0
 
-    return selected_orders
+    for node in node_order:
+        if current_capacity + ord_quantities[node] <= max_cap:
+            current_slot.append(node)
+            current_capacity += ord_quantities[node]
 
+            if len(current_slot) > 1:
+                current_distance += distance[current_slot[-2]][current_slot[-1]]
+        else:
+            slots.append((current_slot, current_distance))
+            current_slot = [node]
+            current_capacity = ord_quantities[node]
+            current_distance = 0
 
-def solve_tsp(distances):
-    n = len(distances)
-    visited = [False] * n
-    path = [0]
-    visited[0] = True
+    if current_slot:
+        slots.append((current_slot, current_distance))
 
-    for _ in range(n - 1):
-        min_dist = sys.maxsize
-        nearest_city = -1
-        current_city = path[-1]
+    optimized_slots = []
 
-        for city in range(n):
-            if not visited[city] and distances[current_city][city] < min_dist:
-                min_dist = distances[current_city][city]
-                nearest_city = city
+    for slot, _ in slots:
+        possible_orders = itertools.permutations(slot)
+        min_distance = float('inf')
+        best_order = []
 
-        path.append(nearest_city)
-        visited[nearest_city] = True
+        for order in possible_orders:
+            dist = sum(distance[order[i]][order[i+1]] for i in range(len(order) - 1))
+            if dist < min_distance:
+                min_distance = dist
+                best_order = order
 
-    path.append(0)  
-    return path
+        optimized_slots.append((best_order, min_distance))
 
-def solve_neighborhood_knapsack(neighborhood_data, vehicle_capacity):
-    orders = neighborhood_data['order_quantity']
-    distances = neighborhood_data['distances']
-    selected_orders = solve_knapsack(orders, distances, vehicle_capacity)
-    return selected_orders
+    return optimized_slots
+os=knapsack(distance, res_dist, ord_quantity,max_cap)
 
-def solve_vehicle_route(selected_orders):
-    vehicle_route = solve_tsp(selected_orders)
-    return vehicle_route
+#output file coding 
+final_lst=[]
+for i in os:
+    temp=[]
+    temp.append('r0')
+    for j in i[0]:
+        temp.append('n'+str(j))
+    temp.append('r0')
+    final_lst.append(temp)
+#print(final_lst)
+final_slots={"v0": {"path1": final_lst[0], "path2": final_lst[1], "path3": final_lst[2],"path4":final_lst[3],
+                    "path5": final_lst[4], "path6": final_lst[5], "path7": final_lst[6],"path8":final_lst[7],
+                    "path8": final_lst[9]}}
+print(final_slots)
 
-def solve_all_neighborhoods(data):
-    vehicle_capacity = data['vehicles']['v0']['capacity']
-    neighborhoods = data['neighbourhoods']
-    vehicle_route = []
-    
-    for neighborhood_id, neighborhood_data in neighborhoods.items():
-        selected_orders = solve_neighborhood_knapsack(neighborhood_data, vehicle_capacity)
-        neighborhood_vehicle_route = solve_vehicle_route(selected_orders)
-        vehicle_route.append(neighborhood_vehicle_route)
-    
-    return vehicle_route
-
-
-f = open('Input data/level1a.json')
-data = json.load(f)
-final_vehicle_route = solve_all_neighborhoods(data)
-
-print(final_vehicle_route)
-def format_output(vehicle_routes):
-    formatted_output = {"v0": {}}
-    for i, route in enumerate(vehicle_routes, start=1):
-        formatted_output["v0"]["path" + str(i)] = route
-    return formatted_output
-
-"""
-output = format_output(final_vehicle_routes)
-output_json = json.dumps(output, indent=2)
-print(output_json)
-"""
+with open("level1b_output.json", "w") as outfile:
+    json.dump(final_slots, outfile)
 
 

@@ -13,20 +13,9 @@ for i in neighbour.keys():
     distance.append(temp[1])
 
 res_dist=d['restaurants']['r0']['neighbourhood_distance']
-
-print("Distance to neighbourhood from restaurant r0 :",res_dist)
-
-print("Order_quantity for each area ",ord_quantity)
-
 max_cap=d['vehicles']['v0']['capacity']
 
-print("capacity of scooter :",max_cap)
-
-print("Total quantity :",sum(ord_quantity))
-
-print("minimum number of slots :",round(sum(ord_quantity)/max_cap))
-
-def find_optimized_slots(distance, res_dist, ord_quantities, max_cap):
+def knapsack(distance, res_dist, ord_quantities, max_cap):
     node_order = sorted(range(len(res_dist)), key=lambda x: res_dist[x])
     slots = []
     current_slot = []
@@ -65,7 +54,9 @@ def find_optimized_slots(distance, res_dist, ord_quantities, max_cap):
         optimized_slots.append((best_order, min_distance))
 
     return optimized_slots
-os=find_optimized_slots(distance, res_dist, ord_quantity,max_cap)
+os=knapsack(distance, res_dist, ord_quantity,max_cap)
+
+#output file coding 
 final_lst=[]
 for i in os:
     temp=[]
